@@ -36,7 +36,7 @@ public class MemberController {
 
         return "redirect:/"; //home화면으로 돌림
     }
-
+//
     @GetMapping("/members")
     public String list(Model model){
         List<Member> members = memberService.findMembers();
