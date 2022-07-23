@@ -1,6 +1,8 @@
 package jpabook.jpashop.domain;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
@@ -11,6 +13,7 @@ import java.util.List;
 @Entity
 @Table(name = "orders")
 @Getter @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED) //객체를 새로 만들지 말라는 뜻, 생성자가 protected임, createOrder로 하라는거구나
 public class Order {
 
     @Id @GeneratedValue
@@ -59,4 +62,51 @@ public class Order {
         this.delivery = delivery;
         delivery.setOrder(this);
     }
+
+    //==생성메서드==//
+
+    /**
+     * order 연관관계 걸고 상태랑 모든 것들이 정리가 된다
+     * 생성하는 지점을 변경할때 이 로직만 변경하면 된다 !
+     * 빌더 패턴인가 이게 ?
+     * */
+    public static Order createOrder(Member member,Delivery delivery,OrderItem... orderItems){
+        Order order = new Order();
+        order.setMember(member);
+        order.setDelivery(delivery);
+        for (OrderItem orderItem : orderItems) {
+            order.addOrderItem(orderItem);
+        }
+        order.setStatus(OrderStatus.ORDER);
+        order.setOrderDate(LocalDateTime.now());
+        return order;
+    }
+
+    /**
+     * 주문 취소 CANCEL 버튼 누를때 다시 재고 올라가는것
+     */
+    public void cancel(){
+        if(delivery.getStatus() ==DeliveryStatus.COMP){
+            throw new IllegalStateException("이미 배송완료된 상품은 취소가 불가능합니다");
+        }
+
+        this.setStatus(OrderStatus.CANCEL);
+        for (OrderItem orderItem : orderItems) {
+            orderItem.cancel();
+        }
+    }
+
+    //==조회 로직==//
+
+    /**
+     * 전체 주문 가격 조회
+     */
+    public int getTotalPrice(){
+        int totalPrice = 0;
+        for (OrderItem orderItem : orderItems) {
+            totalPrice += orderItem.getTotalPrice();
+        }
+        return totalPrice;
+    }
+
 }
